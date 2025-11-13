@@ -22,7 +22,8 @@ Ao invés de precisar abrir um app, o funcionário apenas toca em um dos três *
 O projeto pode ser acessado e testado em tempo real no simulador Wokwi:
 
 **Link da Simulação:** (https://wokwi.com/projects/447468384986344449)
-
+**Link do Vídeo:** (https://youtu.be/4hdYw6rTiDM)
+ 
 ## 4. Funcionamento Técnico e Comunicação
 
 
