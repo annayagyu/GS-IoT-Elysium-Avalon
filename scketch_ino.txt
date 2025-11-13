@@ -1,0 +1,124 @@
+#include <WiFi.h>
+#include <HTTPClient.h>
+
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
+
+
+const char* http_endpoint = "https://webhook.site/a2e6670b-84c2-4dfd-b569-49fddf1c9e51";
+
+#define BTN_BEM 13
+#define BTN_OK 12
+#define BTN_ESTRESSADO 14
+
+#define LED_RED 25
+#define LED_GREEN 26
+#define LED_BLUE 27
+
+WiFiClient espClient;
+
+void setLedColor(int r, int g, int b) {
+  analogWrite(LED_RED, r);
+  analogWrite(LED_GREEN, g);
+  analogWrite(LED_BLUE, b);
+}
+
+void ledSucesso(String mood) { 
+  Serial.println("[HTTP] Check-in enviado! Piscando cor...");
+
+
+  int r = 0, g = 0, b = 0;
+  if (mood == "BEM") { g = 255; }         
+  if (mood == "OK") { r = 255; g = 255; } 
+  if (mood == "ESTRESSADO") { r = 255; } 
+
+  
+  setLedColor(0, 0, 0); delay(250);
+  setLedColor(r, g, b); delay(250);
+  setLedColor(0, 0, 0); delay(250);
+  setLedColor(r, g, b); delay(250);
+  setLedColor(0, 0, 0); delay(250);
+  setLedColor(r, g, b); delay(250);
+  setLedColor(0, 0, 0);
+}
+
+void sendHttpCheckin(String mood) {
+  
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Erro: Sem Wi-Fi");
+    return;
+  }
+
+  HTTPClient http;
+  http.begin(http_endpoint);
+  http.addHeader("Content-Type", "application/json");
+
+  String payload = "{\"mood\":\"" + mood + "\"}";
+
+  Serial.print("Enviando HTTP POST para: ");
+  Serial.println(http_endpoint);
+  Serial.print("Payload: ");
+  Serial.println(payload);
+
+  int httpCode = http.POST(payload);
+
+  if (httpCode > 0) {
+    String response = http.getString();
+    Serial.print("Código de retorno HTTP: ");
+    Serial.println(httpCode);
+    Serial.print("Resposta: ");
+    Serial.println(response);
+    
+    if (httpCode == 200) {
+      ledSucesso(mood);
+    }
+  } else {
+    Serial.print("Falha no HTTP, código: ");
+    Serial.println(httpCode);
+  }
+
+  http.end();
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(BTN_BEM, INPUT_PULLUP);
+  pinMode(BTN_OK, INPUT_PULLUP);
+  pinMode(BTN_ESTRESSADO, INPUT_PULLUP);
+
+  pinMode(LED_RED, OUTPUT);
+  pinMode(LED_GREEN, OUTPUT);
+  pinMode(LED_BLUE, OUTPUT);
+  
+  setLedColor(0, 0, 0);
+
+  Serial.print("Conectando ao Wi-Fi: ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password, 6);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(100);
+  }
+  Serial.println(" Conectado!");
+  Serial.print("Endereço IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void loop() {
+  
+  if (digitalRead(BTN_BEM) == LOW) {
+    sendHttpCheckin("BEM");
+    delay(1000);
+  }
+  
+  if (digitalRead(BTN_OK) == LOW) {
+    sendHttpCheckin("OK");
+    delay(1000);
+  }
+
+  if (digitalRead(BTN_ESTRESSADO) == LOW) {
+    sendHttpCheckin("ESTRESSADO");
+    delay(1000);
+  }
+}
